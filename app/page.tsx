@@ -17,6 +17,10 @@ export default function WelcomeScreen() {
     router.push("/consent")
   }
 
+  const handleNaverLogin = () => {
+    router.push("/consent")
+  }
+
   if (!mounted) return null
 
   return (
@@ -86,7 +90,10 @@ export default function WelcomeScreen() {
             Google로 시작하기
           </Button>
 
-          <Button className="w-full py-6 bg-[#03C75A] hover:bg-[#02b050] text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 hover:scale-[0.98] active:scale-[0.96]">
+          <Button
+            onClick={handleNaverLogin}
+            className="w-full py-6 bg-[#03C75A] hover:bg-[#02b050] text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 hover:scale-[0.98] active:scale-[0.96]"
+          >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 10L10 18L2 10L10 2L18 10Z" fill="white" />
             </svg>

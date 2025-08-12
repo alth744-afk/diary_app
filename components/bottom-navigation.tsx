@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, User } from "lucide-react"
+import { Home, User, BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { useUserStore } from "@/lib/store"
@@ -35,6 +35,19 @@ export function BottomNavigation() {
       </Link>
 
       <Link
+        href="/my-diaries"
+        className={cn(
+          "flex flex-col items-center justify-center w-full h-full",
+          pathname.includes("/my-diaries") ? "text-gray-800" : "text-gray-400",
+        )}
+      >
+        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="flex flex-col items-center">
+          <BookOpen className="h-6 w-6" />
+          <span className="text-xs mt-1 font-medium">내 일기</span>
+        </motion.div>
+      </Link>
+
+      <Link
         href="/profile"
         className={cn(
           "flex flex-col items-center justify-center w-full h-full",
@@ -43,7 +56,7 @@ export function BottomNavigation() {
       >
         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="flex flex-col items-center">
           <User className="h-6 w-6" />
-          <span className="text-xs mt-1 font-medium">{user?.nickname || "프로필"}</span>
+          <span className="text-xs mt-1 font-medium">프로필</span>
         </motion.div>
       </Link>
     </div>

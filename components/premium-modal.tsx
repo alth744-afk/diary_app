@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Check, X } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 
 interface PremiumModalProps {
@@ -10,12 +10,19 @@ interface PremiumModalProps {
 }
 
 export function PremiumModal({ onClose }: PremiumModalProps) {
+  const router = useRouter()
+
+  const handlePremiumClick = () => {
+    onClose()
+    router.push("/premium")
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]"
       onClick={onClose}
     >
       <motion.div
@@ -76,9 +83,9 @@ export function PremiumModal({ onClose }: PremiumModalProps) {
         <div className="flex flex-col gap-3">
           <Button
             className="py-6 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 hover:scale-[0.98] active:scale-[0.96]"
-            asChild
+            onClick={handlePremiumClick}
           >
-            <Link href="/premium">프리미엄 구독 시작하기</Link>
+            프리미엄 구독 시작하기
           </Button>
           <Button variant="ghost" onClick={onClose} className="rounded-full">
             나중에 하기

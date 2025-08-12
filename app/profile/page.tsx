@@ -9,18 +9,45 @@ import { motion } from "framer-motion"
 import { ChevronRight, LogOut, Moon, Palette, Bell, Mail, Shield, CreditCard, Lock, User } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import { PremiumModal } from "@/components/premium-modal"
+import { ThemeSelector } from "@/components/theme-selector"
 import { useUserStore } from "@/lib/store"
 
 export default function ProfilePage() {
   const router = useRouter()
   const [showPremiumModal, setShowPremiumModal] = useState(false)
+  const [showThemeSelector, setShowThemeSelector] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const { user, clearUser } = useUserStore()
   const [mounted, setMounted] = useState(false)
+  const [profileImage, setProfileImage] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true)
+    // 저장된 프로필 이미지 불러오기
+    const savedImage = localStorage.getItem("profileImage")
+    if (savedImage) {
+      setProfileImage(savedImage)
+    }
   }, [])
+
+  const handleProfileImageUpload = () => {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = "image/*"
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          setProfileImage(result)
+          localStorage.setItem("profileImage", result)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    input.click()
+  }
 
   const handleLogout = () => {
     clearUser()
@@ -29,6 +56,10 @@ export default function ProfilePage() {
 
   const handlePremiumFeature = () => {
     setShowPremiumModal(true)
+  }
+
+  const handleThemeChange = () => {
+    setShowThemeSelector(true)
   }
 
   const container = {
@@ -58,12 +89,18 @@ export default function ProfilePage() {
         <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
           <motion.div variants={item} className="bg-white rounded-3xl shadow-neumorphic overflow-hidden">
             <div className="p-6 flex items-center space-x-4 border-b border-gray-100">
-              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
-                <User className="h-6 w-6 text-gray-500" />
+              <div
+                className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                onClick={handleProfileImageUpload}
+              >
+                {profileImage ? (
+                  <img src={profileImage || "/placeholder.svg"} alt="프로필" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="h-6 w-6 text-gray-500" />
+                )}
               </div>
               <div>
                 <h2 className="font-bold text-gray-800">{user?.nickname || "사용자"}</h2>
-                <p className="text-sm text-gray-500">{user?.email || "user@example.com"}</p>
                 <p className="text-xs text-gray-400 mt-1">
                   {user?.gender === "female" ? "여성" : user?.gender === "male" ? "남성" : ""}
                   {user?.birthdate ? ` · ${user.birthdate}` : ""}
@@ -91,14 +128,6 @@ export default function ProfilePage() {
                 </div>
                 <Switch id="marketing" className="data-[state=checked]:bg-gray-800" />
               </div>
-
-              <div className="p-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <Mail className="h-5 w-5 mr-3 text-gray-500" />
-                  <span className="text-gray-800">내 이메일 보기</span>
-                </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </div>
             </div>
           </motion.div>
 
@@ -120,17 +149,12 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="p-4 flex items-center justify-between cursor-pointer" onClick={handlePremiumFeature}>
+              <div className="p-4 flex items-center justify-between cursor-pointer" onClick={handleThemeChange}>
                 <div className="flex items-center">
                   <Palette className="h-5 w-5 mr-3 text-gray-500" />
                   <span className="text-gray-800">다이어리 테마 컬러 변경</span>
                 </div>
-                <div className="flex items-center">
-                  <span className="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-full flex items-center">
-                    <Lock className="h-3 w-3 mr-1" />
-                    프리미엄
-                  </span>
-                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
               </div>
 
               <div className="p-4 flex items-center justify-between">
@@ -164,7 +188,7 @@ export default function ProfilePage() {
           <motion.div variants={item}>
             <Button
               variant="outline"
-              className="w-full py-6 border-gray-200 text-gray-700 rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300"
+              className="w-full py-6 border-gray-200 text-gray-700 rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 bg-transparent"
               onClick={handleLogout}
             >
               <LogOut className="h-5 w-5 mr-2" />
@@ -177,6 +201,7 @@ export default function ProfilePage() {
       <BottomNavigation />
 
       {showPremiumModal && <PremiumModal onClose={() => setShowPremiumModal(false)} />}
+      <ThemeSelector isOpen={showThemeSelector} onClose={() => setShowThemeSelector(false)} />
     </div>
   )
 }

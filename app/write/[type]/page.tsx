@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { ChevronLeft, Save } from "lucide-react"
 import { motion } from "framer-motion"
 import { EmotionSelector } from "@/components/emotion-selector"
@@ -39,9 +40,64 @@ export default function WritePage() {
   const params = useParams()
   const type = params.type as string
   const [content, setContent] = useState("")
+  const [title, setTitle] = useState("")
+  const [selectedEmotion, setSelectedEmotion] = useState("😊")
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<number | undefined>()
+
+  useEffect(() => {
+    const pendingTitle = localStorage.getItem("pendingDiaryTitle")
+    if (pendingTitle) {
+      setTitle(pendingTitle)
+      localStorage.removeItem("pendingDiaryTitle")
+    }
+
+    const urlParams = new URLSearchParams(window.location.search)
+    const timeFromUrl = urlParams.get("time")
+
+    if (timeFromUrl) {
+      setSelectedTimeSlot(Number.parseInt(timeFromUrl))
+    } else {
+      const timeSlot = localStorage.getItem("selectedTimeSlot")
+      if (timeSlot) {
+        setSelectedTimeSlot(Number.parseInt(timeSlot))
+        localStorage.removeItem("selectedTimeSlot")
+      }
+    }
+  }, [])
+
+  const handleTimeChange = (time: number | undefined) => {
+    setSelectedTimeSlot(time)
+  }
 
   const handleSave = () => {
-    // Save diary entry logic would go here
+    const finalTitle = title.trim() || content.split("\n")[0]?.trim() || content.substring(0, 50).trim()
+
+    const diaryEntry: any = {
+      id: Date.now().toString(),
+      title: finalTitle || `${diaryTitles[type]} - ${new Date().toLocaleDateString("ko-KR")}`,
+      content,
+      type,
+      date: new Date().toISOString(),
+      emotion: type === "emotion" ? selectedEmotion : diaryEmojis[type],
+      lastModified: new Date().toISOString(),
+    }
+
+    if (type === "schedule" && selectedTimeSlot !== undefined) {
+      diaryEntry.timeSlot = selectedTimeSlot
+      diaryEntry.scheduledTime = `${selectedTimeSlot.toString().padStart(2, "0")}:00`
+    }
+
+    const existingEntries = JSON.parse(localStorage.getItem("diaryEntries") || "[]")
+    existingEntries.push(diaryEntry)
+    localStorage.setItem("diaryEntries", JSON.stringify(existingEntries))
+
+    localStorage.removeItem("currentDiaryTitle")
+
+    if (type === "schedule" && selectedTimeSlot !== undefined) {
+      localStorage.setItem("scrollToTime", selectedTimeSlot.toString())
+      localStorage.setItem("switchToDay", "true")
+    }
+
     router.push("/home")
   }
 
@@ -50,7 +106,7 @@ export default function WritePage() {
       case "emotion":
         return (
           <>
-            <EmotionSelector />
+            <EmotionSelector onEmotionChange={setSelectedEmotion} />
             <Textarea
               placeholder={diaryPrompts[type]}
               value={content}
@@ -69,7 +125,7 @@ export default function WritePage() {
           </>
         )
       case "schedule":
-        return <TaskList />
+        return <TaskList selectedTime={selectedTimeSlot} onTimeChange={handleTimeChange} />
       default:
         return (
           <Textarea
@@ -105,8 +161,18 @@ export default function WritePage() {
           <h1 className="text-xl font-bold text-gray-800">{diaryTitles[type] || "일기 작성"}</h1>
         </div>
 
-        <div className="bg-[#F8F9FA] rounded-2xl p-4 mb-6 text-gray-500 text-sm shadow-inner-neumorphic">
-          {diaryPrompts[type]}
+        <div className="mb-6">
+          <Input
+            placeholder={title ? "제목을 입력하세요" : diaryPrompts[type]}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="rounded-2xl py-4 px-4 bg-[#F2F2F2] border-0 shadow-inner-neumorphic focus:shadow-inner-neumorphic-focus transition-all duration-300"
+          />
+          {!title && (
+            <p className="text-xs text-gray-400 mt-2 px-2">
+              제목을 입력하지 않으면 내용의 첫 줄이 제목으로 사용됩니다.
+            </p>
+          )}
         </div>
 
         {renderDiaryContent()}
@@ -114,7 +180,8 @@ export default function WritePage() {
         <div className="flex justify-end mt-6">
           <Button
             onClick={handleSave}
-            className="px-6 py-5 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 hover:scale-[0.98] active:scale-[0.96]"
+            disabled={!content.trim() && type !== "schedule"}
+            className="px-6 py-5 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 hover:scale-[0.98] active:scale-[0.96]"
           >
             <Save className="h-5 w-5 mr-2" />
             저장하기

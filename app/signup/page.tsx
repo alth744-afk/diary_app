@@ -27,28 +27,21 @@ export default function SignupPage() {
       return
     }
 
-    if (!gender) {
-      alert("성별을 선택해주세요.")
-      return
-    }
-
-    // Save user data to store
     setUser({
       nickname,
       birthdate,
-      gender,
-      email: "user@gmail.com", // This would come from the Google auth in a real app
+      gender: gender || null,
+      email: "user@gmail.com",
     })
 
     router.push("/home")
   }
 
   const handleSkip = () => {
-    // Set default values
     setUser({
       nickname: "사용자",
       birthdate: "",
-      gender: "female", // Default gender
+      gender: null,
       email: "user@gmail.com",
     })
 
@@ -98,7 +91,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-700 font-medium">성별 선택</Label>
+              <Label className="text-gray-700 font-medium">성별 선택 (선택)</Label>
               <RadioGroup value={gender || ""} onValueChange={setGender} className="flex space-x-4">
                 <div className="flex items-center space-x-2 bg-[#F2F2F2] rounded-xl p-4 shadow-neumorphic flex-1 cursor-pointer data-[state=checked]:shadow-neumorphic-pressed">
                   <RadioGroupItem
