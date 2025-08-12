@@ -108,6 +108,7 @@ export default function ConsentPage() {
   const [allConsent, setAllConsent] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [currentContent, setCurrentContent] = useState("")
+  const [currentItemId, setCurrentItemId] = useState<string | null>(null)
 
   const handleAllConsent = (checked: boolean) => {
     setAllConsent(checked)
@@ -131,9 +132,18 @@ export default function ConsentPage() {
     setAllConsent(allChecked)
   }
 
-  const openModal = (content: string) => {
+  const openModal = (id: string, content: string) => {
+    setCurrentItemId(id)
     setCurrentContent(content)
     setModalOpen(true)
+  }
+
+  const handleModalConfirm = () => {
+    if (currentItemId) {
+      handleSingleConsent(currentItemId, true)
+    }
+    setModalOpen(false)
+    setCurrentItemId(null)
   }
 
   const handleContinue = () => {
@@ -197,14 +207,14 @@ export default function ConsentPage() {
                     {item.label}
                   </Label>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-500 text-xs"
-                  onClick={() => openModal(item.content)}
-                >
-                  보기
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-500 text-xs"
+                    onClick={() => openModal(item.id, item.content)}
+                  >
+                    보기
+                  </Button>
               </div>
             ))}
           </div>
@@ -218,7 +228,13 @@ export default function ConsentPage() {
         </Button>
       </motion.div>
 
-      {modalOpen && <ConsentModal content={currentContent} onClose={() => setModalOpen(false)} />}
+      {modalOpen && (
+        <ConsentModal
+          content={currentContent}
+          onClose={() => setModalOpen(false)}
+          onConfirm={handleModalConfirm}
+        />
+      )}
     </div>
   )
 }

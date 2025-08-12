@@ -10,6 +10,10 @@ import { motion } from "framer-motion"
 import { EmotionSelector } from "@/components/emotion-selector"
 import { PeriodSymptoms } from "@/components/period-symptoms"
 import { TaskList } from "@/components/task-list"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { ko } from "date-fns/locale"
 
 const diaryPrompts: Record<string, string> = {
   daily: "오늘 기억에 남는 일은?",
@@ -43,12 +47,19 @@ export default function WritePage() {
   const [title, setTitle] = useState("")
   const [selectedEmotion, setSelectedEmotion] = useState("😊")
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number | undefined>()
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 
   useEffect(() => {
     const pendingTitle = localStorage.getItem("pendingDiaryTitle")
     if (pendingTitle) {
       setTitle(pendingTitle)
       localStorage.removeItem("pendingDiaryTitle")
+    }
+
+    const savedDate = localStorage.getItem("selectedDiaryDate")
+    if (savedDate) {
+      setSelectedDate(new Date(savedDate))
+      localStorage.removeItem("selectedDiaryDate")
     }
 
     const urlParams = new URLSearchParams(window.location.search)
@@ -77,7 +88,7 @@ export default function WritePage() {
       title: finalTitle || `${diaryTitles[type]} - ${new Date().toLocaleDateString("ko-KR")}`,
       content,
       type,
-      date: new Date().toISOString(),
+      date: selectedDate.toISOString(),
       emotion: type === "emotion" ? selectedEmotion : diaryEmojis[type],
       lastModified: new Date().toISOString(),
     }
@@ -161,6 +172,17 @@ export default function WritePage() {
           <h1 className="text-xl font-bold text-gray-800">{diaryTitles[type] || "일기 작성"}</h1>
         </div>
 
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="mb-6 rounded-full">
+              {format(selectedDate, "yyyy년 MM월 dd일 (EEE)", { locale: ko })}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="p-0">
+            <Calendar mode="single" selected={selectedDate} onSelect={(d) => d && setSelectedDate(d)} />
+          </PopoverContent>
+        </Popover>
+
         <div className="mb-6">
           <Input
             placeholder={title ? "제목을 입력하세요" : diaryPrompts[type]}
@@ -180,7 +202,7 @@ export default function WritePage() {
         <div className="flex justify-end mt-6">
           <Button
             onClick={handleSave}
-            disabled={!content.trim() && type !== "schedule"}
+            disabled={!content.trim() && type !== "schedule" && type !== "period"}
             className="px-6 py-5 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300 hover:scale-[0.98] active:scale-[0.96]"
           >
             <Save className="h-5 w-5 mr-2" />
