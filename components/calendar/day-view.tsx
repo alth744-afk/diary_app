@@ -12,9 +12,17 @@ interface DayViewProps {
   onTimeClick?: (date?: Date, timeSlot?: number) => void
   onDiaryClick?: (diary: any) => void
   diaryEntries?: any[]
+  scrollToTime?: number | null
 }
 
-export function DayView({ date, onDateChange, onTimeClick, onDiaryClick, diaryEntries = [] }: DayViewProps) {
+export function DayView({
+  date,
+  onDateChange,
+  onTimeClick,
+  onDiaryClick,
+  diaryEntries = [],
+  scrollToTime = null,
+}: DayViewProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const [expandedHours, setExpandedHours] = useState<Set<number>>(new Set())
@@ -36,6 +44,14 @@ export function DayView({ date, onDateChange, onTimeClick, onDiaryClick, diaryEn
     const timer = setTimeout(scrollToCurrentTime, 200)
     return () => clearTimeout(timer)
   }, [date])
+
+  useEffect(() => {
+    if (scrollToTime !== null && scrollAreaRef.current) {
+      const hourHeight = 56
+      const scrollTop = Math.max(0, scrollToTime * hourHeight - 100)
+      scrollAreaRef.current.scrollTo({ top: scrollTop, behavior: "smooth" })
+    }
+  }, [scrollToTime])
 
   const goToPreviousDay = () => {
     const newDate = new Date(date)

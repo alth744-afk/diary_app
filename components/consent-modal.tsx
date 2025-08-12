@@ -7,9 +7,10 @@ import { motion } from "framer-motion"
 interface ConsentModalProps {
   content: string
   onClose: () => void
+  onConfirm: () => void
 }
 
-export function ConsentModal({ content, onClose }: ConsentModalProps) {
+export function ConsentModal({ content, onClose, onConfirm }: ConsentModalProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -39,7 +40,7 @@ export function ConsentModal({ content, onClose }: ConsentModalProps) {
 
         <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
           <Button
-            onClick={onClose}
+            onClick={onConfirm}
             className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-neumorphic hover:shadow-neumorphic-pressed transition-all duration-300"
           >
             확인

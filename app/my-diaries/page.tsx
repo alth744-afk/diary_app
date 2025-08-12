@@ -24,17 +24,11 @@ interface DiaryEntry {
   lastModified?: string
 }
 
-interface DateFilter {
-  type: "single" | "range" | "none"
-  startDate?: Date
-  endDate?: Date
-}
-
 export default function MyDiariesPage() {
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
-  const [dateFilter, setDateFilter] = useState<DateFilter>({ type: "none" })
+  const [dateFilter, setDateFilter] = useState<{ startDate?: Date; endDate?: Date }>({})
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -49,7 +43,12 @@ export default function MyDiariesPage() {
     const savedFilters = JSON.parse(localStorage.getItem("diaryFilters") || "{}")
     if (savedFilters.searchTerm) setSearchTerm(savedFilters.searchTerm)
     if (savedFilters.typeFilter) setTypeFilter(savedFilters.typeFilter)
-    if (savedFilters.dateFilter) setDateFilter(savedFilters.dateFilter)
+    if (savedFilters.dateFilter) {
+      setDateFilter({
+        startDate: savedFilters.dateFilter.startDate ? new Date(savedFilters.dateFilter.startDate) : undefined,
+        endDate: savedFilters.dateFilter.endDate ? new Date(savedFilters.dateFilter.endDate) : undefined,
+      })
+    }
   }, [])
 
   useEffect(() => {
@@ -66,13 +65,13 @@ export default function MyDiariesPage() {
     const matchesType = typeFilter === "all" || entry.type === typeFilter
 
     let matchesDate = true
-    if (dateFilter.type === "single" && dateFilter.startDate) {
+    if (dateFilter.startDate && dateFilter.endDate) {
+      const entryDate = new Date(entry.date)
+      matchesDate = entryDate >= dateFilter.startDate && entryDate <= dateFilter.endDate
+    } else if (dateFilter.startDate) {
       const entryDate = new Date(entry.date).toDateString()
       const filterDate = dateFilter.startDate.toDateString()
       matchesDate = entryDate === filterDate
-    } else if (dateFilter.type === "range" && dateFilter.startDate && dateFilter.endDate) {
-      const entryDate = new Date(entry.date)
-      matchesDate = entryDate >= dateFilter.startDate && entryDate <= dateFilter.endDate
     }
 
     return matchesSearch && matchesType && matchesDate
@@ -102,15 +101,15 @@ export default function MyDiariesPage() {
   const resetFilters = () => {
     setSearchTerm("")
     setTypeFilter("all")
-    setDateFilter({ type: "none" })
+    setDateFilter({})
     localStorage.removeItem("diaryFilters")
   }
 
   const getDateFilterText = () => {
-    if (dateFilter.type === "single" && dateFilter.startDate) {
-      return format(dateFilter.startDate, "yyyy.MM.dd", { locale: ko })
-    } else if (dateFilter.type === "range" && dateFilter.startDate && dateFilter.endDate) {
+    if (dateFilter.startDate && dateFilter.endDate) {
       return `${format(dateFilter.startDate, "MM.dd", { locale: ko })} - ${format(dateFilter.endDate, "MM.dd", { locale: ko })}`
+    } else if (dateFilter.startDate) {
+      return format(dateFilter.startDate, "yyyy.MM.dd", { locale: ko })
     }
     return "날짜 선택"
   }
@@ -172,7 +171,7 @@ export default function MyDiariesPage() {
                   <Button
                     variant="outline"
                     className={`flex-1 min-w-[120px] rounded-2xl bg-white shadow-neumorphic border-0 justify-start ${
-                      dateFilter.type !== "none" ? "text-blue-600" : "text-gray-500"
+                      dateFilter.startDate ? "text-blue-600" : "text-gray-500"
                     }`}
                   >
                     <Calendar className="h-4 w-4 mr-2" />
@@ -181,56 +180,19 @@ export default function MyDiariesPage() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <div className="p-4 space-y-4">
-                    <div className="space-y-2">
-                      <Button
-                        variant={dateFilter.type === "single" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setDateFilter({ type: "single" })}
-                        className="w-full"
-                      >
-                        특정 날짜
-                      </Button>
-                      <Button
-                        variant={dateFilter.type === "range" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setDateFilter({ type: "range" })}
-                        className="w-full"
-                      >
-                        기간 선택
-                      </Button>
-                    </div>
-
-                    {dateFilter.type === "single" && (
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateFilter.startDate}
-                        onSelect={(date) => setDateFilter({ type: "single", startDate: date })}
-                        locale={ko}
-                      />
-                    )}
-
-                    {dateFilter.type === "range" && (
-                      <CalendarComponent
-                        mode="range"
-                        selected={{
-                          from: dateFilter.startDate,
-                          to: dateFilter.endDate,
-                        }}
-                        onSelect={(range) =>
-                          setDateFilter({
-                            type: "range",
-                            startDate: range?.from,
-                            endDate: range?.to,
-                          })
-                        }
-                        locale={ko}
-                      />
-                    )}
+                    <CalendarComponent
+                      mode="range"
+                      selected={{ from: dateFilter.startDate, to: dateFilter.endDate }}
+                      onSelect={(range) =>
+                        setDateFilter({ startDate: range?.from, endDate: range?.to })
+                      }
+                      locale={ko}
+                    />
 
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDateFilter({ type: "none" })}
+                      onClick={() => setDateFilter({})}
                       className="w-full"
                     >
                       <X className="h-4 w-4 mr-2" />
@@ -241,7 +203,7 @@ export default function MyDiariesPage() {
               </Popover>
             </div>
 
-            {(searchTerm || typeFilter !== "all" || dateFilter.type !== "none") && (
+            {(searchTerm || typeFilter !== "all" || dateFilter.startDate) && (
               <Button variant="ghost" size="sm" onClick={resetFilters} className="text-gray-500 hover:text-gray-700">
                 <RotateCcw className="h-4 w-4 mr-2" />
                 필터 초기화
@@ -256,7 +218,7 @@ export default function MyDiariesPage() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📝</div>
               <p className="text-gray-500">
-                {searchTerm || typeFilter !== "all" || dateFilter.type !== "none"
+                {searchTerm || typeFilter !== "all" || dateFilter.startDate
                   ? "검색 조건에 맞는 일기가 없습니다."
                   : "아직 작성된 일기가 없습니다."}
               </p>
